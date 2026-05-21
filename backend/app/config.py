@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = Field(
-        "postgresql://crypto:crypto@localhost:5432/crypto_pairs",
+        "postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require",
         alias="DATABASE_URL",
     )
     mexc_base_url: str = Field("https://api.mexc.com", alias="MEXC_BASE_URL")
