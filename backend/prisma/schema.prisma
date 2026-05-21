@@ -1,0 +1,43 @@
+generator client {
+  provider                    = "prisma-client-py"
+  interface                   = "asyncio"
+  recursive_type_depth        = 5
+  enable_experimental_decimal = true
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MarketSnapshot {
+  id         Int        @id @default(autoincrement())
+  kind       String     @db.VarChar(20)
+  source     String     @default("mexc_spot") @db.VarChar(40)
+  capturedAt DateTime   @default(now()) @map("captured_at") @db.Timestamptz(6)
+  pairs      PairTick[]
+
+  @@index([kind])
+  @@index([capturedAt])
+  @@map("market_snapshots")
+}
+
+model PairTick {
+  id                 Int            @id @default(autoincrement())
+  snapshotId         Int            @map("snapshot_id")
+  symbol             String         @db.VarChar(40)
+  baseAsset          String         @map("base_asset") @db.VarChar(30)
+  quoteAsset         String         @map("quote_asset") @db.VarChar(30)
+  lastPrice          Decimal?       @map("last_price") @db.Decimal(30, 12)
+  priceChange        Decimal?       @map("price_change") @db.Decimal(30, 12)
+  priceChangePercent Decimal?       @map("price_change_percent") @db.Decimal(18, 8)
+  highPrice          Decimal?       @map("high_price") @db.Decimal(30, 12)
+  lowPrice           Decimal?       @map("low_price") @db.Decimal(30, 12)
+  volume             Decimal?       @db.Decimal(30, 8)
+  quoteVolume        Decimal?       @map("quote_volume") @db.Decimal(30, 8)
+  snapshot           MarketSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([symbol, snapshotId])
+  @@index([quoteAsset, priceChangePercent])
+  @@map("pair_ticks")
+}
