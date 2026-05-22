@@ -572,6 +572,10 @@ td span {
   padding: 3px 6px;
 }
 
+td.pair, th.pair{
+  text-align: left;
+}
+
 .snapshot-strip {
   border-bottom: 1px solid var(--line-soft);
   display: flex;

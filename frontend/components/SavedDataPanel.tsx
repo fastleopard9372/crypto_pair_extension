@@ -152,8 +152,8 @@ export function SavedDataPanel({
             <table>
               <thead>
                 <tr>
-                  <th>Pair</th>
                   <th className="matrix-favorite-heading" aria-label="Favorite" />
+                  <th className="pair">Pair</th>
                   {(matrix?.timestamps ?? []).map((timestamp) => {
                     const snapshotId = timestampSnapshotIds.get(timestamp);
                     return (
@@ -178,10 +178,6 @@ export function SavedDataPanel({
                   const isFavorite = favoriteSymbols.has(row.symbol);
                   return (
                     <tr key={row.symbol} onClick={() => onSelect(row.symbol)}>
-                      <td>
-                        <strong>{row.base_asset}</strong>
-                        <span>/{row.quote_asset}</span>
-                      </td>
                       <td className="matrix-favorite-cell">
                         <button
                           className={`pair-star-button ${isFavorite ? "active" : ""}`}
@@ -198,6 +194,10 @@ export function SavedDataPanel({
                             fill={isFavorite ? "currentColor" : "none"}
                           />
                         </button>
+                      </td>
+                      <td className="pair">
+                        <strong>{row.base_asset}</strong>
+                        <span>/{row.quote_asset}</span>
                       </td>
                       {(matrix?.timestamps ?? []).map((timestamp) => {
                         const cell = row.cells[timestamp];
