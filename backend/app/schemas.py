@@ -48,6 +48,13 @@ class SnapshotSavedOut(BaseModel):
     pair_count: int
 
 
+class SnapshotDeletedOut(BaseModel):
+    deleted: bool
+    id: int
+    captured_at: datetime | None = None
+    pair_count: int = 0
+
+
 class MatrixCellOut(BaseModel):
     snapshot_id: int
     captured_at: datetime

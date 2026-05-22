@@ -29,6 +29,13 @@ export type SnapshotMeta = {
   pair_count: number;
 };
 
+export type SnapshotDeleted = {
+  deleted: boolean;
+  id: number;
+  captured_at: string | null;
+  pair_count: number;
+};
+
 export type MatrixCell = {
   snapshot_id: number;
   captured_at: string;
@@ -80,6 +87,8 @@ export type FavoritePair = {
   created_at: string;
 };
 
+export type FavoritePairInput = Pick<Pair, "symbol" | "base_asset" | "quote_asset">;
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body && !headers.has("Content-Type")) {
@@ -107,7 +116,7 @@ export function getFavorites(kind: string) {
   return request<FavoritePair[]>(`/api/favorites?kind=${encodeURIComponent(kind)}`);
 }
 
-export function addFavorite(pair: Pair, kind: string) {
+export function addFavorite(pair: FavoritePairInput, kind: string) {
   return request<FavoritePair>("/api/favorites", {
     method: "POST",
     body: JSON.stringify({
@@ -139,6 +148,13 @@ export function saveSnapshot(kind: string) {
 
 export function getSnapshots(kind: string) {
   return request<SnapshotMeta[]>(`/api/snapshots?kind=${encodeURIComponent(kind)}&limit=100`);
+}
+
+export function removeSnapshot(snapshotId: number, kind: string) {
+  return request<SnapshotDeleted>(
+    `/api/snapshots/${snapshotId}?kind=${encodeURIComponent(kind)}`,
+    { method: "DELETE" }
+  );
 }
 
 export function getMatrix(kind: string) {

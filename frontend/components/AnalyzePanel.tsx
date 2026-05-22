@@ -40,7 +40,7 @@ export function AnalyzePanel({
 
       <div className="analysis-controls">
         <label className="threshold-control">
-          <span>Recommend &gt;=</span>
+          <span>Recommend abs &gt;=</span>
           <input
             type="number"
             min="0"
@@ -72,7 +72,7 @@ export function AnalyzePanel({
           <span>{formatPlainPercent(analysis.qualified_ratio)} meet the threshold</span>
           <span>
             {formatPlainPercent(analysis.target_ratio)} count cutoff:{" "}
-            <strong>{formatPercent(analysis.target_threshold)}</strong>
+            <strong>{formatPlainPercent(analysis.target_threshold)}</strong>
           </span>
         </div>
       )}
@@ -95,11 +95,10 @@ export function AnalyzePanel({
           </button>
         ))}
         {analysis && analysis.recommendations.length === 0 && (
-          <div className="empty-state">No saved pair is at or above {threshold}%.</div>
+          <div className="empty-state">No saved pair has absolute change at or above {threshold}%.</div>
         )}
         {!analysis && <div className="empty-state">Run analyze after saving at least one snapshot.</div>}
       </div>
     </div>
   );
 }
-

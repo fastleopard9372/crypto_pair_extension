@@ -10,6 +10,7 @@ import { SavedDataPanel } from "@/components/SavedDataPanel";
 import {
   AnalyzeResult,
   FavoritePair,
+  FavoritePairInput,
   Pair,
   SnapshotMatrix,
   SnapshotMeta,
@@ -21,6 +22,7 @@ import {
   getMatrix,
   getSnapshots,
   removeFavorite,
+  removeSnapshot,
   saveSnapshot
 } from "@/lib/api";
 import { formatTime, toNumber } from "@/lib/format";
@@ -35,6 +37,7 @@ export default function Home() {
   const [matrix, setMatrix] = useState<SnapshotMatrix | null>(null);
   const [analysis, setAnalysis] = useState<AnalyzeResult | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState("BTCUSDT");
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [marketSortMode, setMarketSortMode] = useState<MarketSortMode>("change");
   const [threshold, setThreshold] = useState(10);
@@ -44,6 +47,7 @@ export default function Home() {
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingSnapshot, setIsDeletingSnapshot] = useState(false);
   const [isChartEnabled, setIsChartEnabled] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -55,6 +59,11 @@ export default function Home() {
   const favoriteSymbols = useMemo(
     () => new Set(favorites.map((favorite) => favorite.symbol)),
     [favorites]
+  );
+
+  const livePairBySymbol = useMemo(
+    () => new Map(livePairs.map((pair) => [pair.symbol, pair])),
+    [livePairs]
   );
 
   const filteredLivePairs = useMemo(() => {
@@ -84,11 +93,29 @@ export default function Home() {
     });
   }, [favoriteSymbols, livePairs, marketSortMode, query]);
 
+  const visibleFavorites = useMemo(() => {
+    const needle = query.trim().toUpperCase();
+    return needle
+      ? favorites.filter(
+          (favorite) =>
+            favorite.symbol.includes(needle) ||
+            favorite.base_asset.includes(needle) ||
+            favorite.quote_asset.includes(needle)
+        )
+      : favorites;
+  }, [favorites, query]);
+
   const visibleMatrixRows = useMemo(() => {
     const rows = matrix?.rows ?? [];
     const needle = query.trim().toUpperCase();
-    return needle ? rows.filter((row) => row.symbol.includes(needle)) : rows;
-  }, [matrix, query]);
+    const filteredRows = needle ? rows.filter((row) => row.symbol.includes(needle)) : rows;
+
+    return [...filteredRows].sort((left, right) => {
+      const leftFavorite = favoriteSymbols.has(left.symbol) ? 1 : 0;
+      const rightFavorite = favoriteSymbols.has(right.symbol) ? 1 : 0;
+      return rightFavorite - leftFavorite;
+    });
+  }, [favoriteSymbols, matrix, query]);
 
   const loadFavorites = useCallback(async () => {
     setIsLoadingFavorites(true);
@@ -124,6 +151,11 @@ export default function Home() {
       const [snapshotRows, matrixRows] = await Promise.all([getSnapshots(kind), getMatrix(kind)]);
       setSnapshots(snapshotRows);
       setMatrix(matrixRows);
+      setSelectedSnapshotId((current) =>
+        current && snapshotRows.some((snapshot) => snapshot.id === current)
+          ? current
+          : (snapshotRows[0]?.id ?? null)
+      );
       setMessage(null);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to read saved data");
@@ -178,7 +210,31 @@ export default function Home() {
     }
   }
 
-  async function handleToggleFavorite(pair: Pair) {
+  async function handleDeleteSnapshot() {
+    if (!selectedSnapshotId) return;
+    const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId);
+    const selectedTime = selectedSnapshot ? formatTime(selectedSnapshot.captured_at) : "this timestamp";
+    if (!window.confirm(`Remove saved data from ${selectedTime} from the database?`)) return;
+
+    setIsDeletingSnapshot(true);
+    try {
+      const deleted = await removeSnapshot(selectedSnapshotId, kind);
+      if (deleted.deleted) {
+        const removedTime = deleted.captured_at ? formatTime(deleted.captured_at) : selectedTime;
+        setMessage(`Removed ${deleted.pair_count} saved pairs from ${removedTime}`);
+      } else {
+        setMessage("That saved timestamp was already removed");
+      }
+      setAnalysis(null);
+      await loadHistory();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to remove saved timestamp");
+    } finally {
+      setIsDeletingSnapshot(false);
+    }
+  }
+
+  async function handleToggleFavorite(pair: FavoritePairInput) {
     const wasFavorite = favoriteSymbols.has(pair.symbol);
     setFavorites((current) =>
       wasFavorite
@@ -206,6 +262,18 @@ export default function Home() {
     } catch (error) {
       await loadFavorites();
       setMessage(error instanceof Error ? error.message : "Failed to update favorite pair");
+    }
+  }
+
+  async function handleRemoveFavorite(favorite: FavoritePair) {
+    setFavorites((current) => current.filter((item) => item.symbol !== favorite.symbol));
+
+    try {
+      await removeFavorite(favorite.symbol, favorite.kind);
+      await loadFavorites();
+    } catch (error) {
+      await loadFavorites();
+      setMessage(error instanceof Error ? error.message : "Failed to remove favorite pair");
     }
   }
 
@@ -247,7 +315,7 @@ export default function Home() {
         <div className="stat">
           <Database size={17} />
           <span>
-            {snapshots.length} saved snapshots / {favorites.length} favorites
+            {snapshots.length} saved snapshots / {favorites?.length} favorites
             {isLoadingFavorites ? "..." : ""}
           </span>
         </div>
@@ -291,9 +359,21 @@ export default function Home() {
           snapshots={snapshots}
           matrix={matrix}
           rows={visibleMatrixRows}
+          favorites={visibleFavorites}
+          favoriteCount={favorites?.length}
+          favoriteSymbols={favoriteSymbols}
+          livePairBySymbol={livePairBySymbol}
           isLoading={isLoadingHistory}
+          isLoadingFavorites={isLoadingFavorites}
+          isDeleting={isDeletingSnapshot}
+          selectedSnapshotId={selectedSnapshotId}
           onLoad={loadHistory}
+          onLoadFavorites={loadFavorites}
+          onDeleteSnapshot={handleDeleteSnapshot}
           onSelect={setSelectedSymbol}
+          onSelectSnapshot={setSelectedSnapshotId}
+          onToggleMatrixFavorite={handleToggleFavorite}
+          onRemoveFavorite={handleRemoveFavorite}
         />
         <AnalyzePanel
           analysis={analysis}

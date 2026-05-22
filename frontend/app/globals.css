@@ -538,6 +538,44 @@ td span {
   padding: 0 10px;
 }
 
+.data-tabs {
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.data-tabs button {
+  background: #0d131b;
+  border: 0;
+  border-right: 1px solid var(--line-soft);
+  color: var(--muted);
+  min-height: 40px;
+}
+
+.data-tabs button:last-child {
+  border-right: 0;
+}
+
+.data-tabs button.active {
+  background: #162333;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.data-tabs span {
+  background: #263241;
+  border: 1px solid #3a4654;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+  min-width: 22px;
+  padding: 3px 6px;
+}
+
+td.pair, th.pair{
+  text-align: left;
+}
+
 .snapshot-strip {
   border-bottom: 1px solid var(--line-soft);
   display: flex;
@@ -553,10 +591,53 @@ td span {
   min-width: 135px;
 }
 
+.snapshot-strip button.selected {
+  background: #162333;
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.snapshot-strip .delete-snapshot-button {
+  align-items: center;
+  color: #ffd0d6;
+  flex-direction: row;
+  margin-left: auto;
+  min-width: 108px;
+}
+
+.snapshot-strip .delete-snapshot-button:hover {
+  border-color: rgba(255, 93, 108, 0.65);
+}
+
 .snapshot-strip span,
 .recommendation-list small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.matrix-table th.selected-timestamp {
+  color: var(--accent-strong);
+}
+
+.matrix-table .matrix-favorite-heading,
+.matrix-table .matrix-favorite-cell {
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+  width: 36px;
+}
+
+.matrix-table th button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  min-height: 24px;
+  padding: 0;
+}
+
+.matrix-table th button:hover {
+  background: transparent;
+  color: var(--accent-strong);
 }
 
 .matrix-table {
@@ -565,6 +646,29 @@ td span {
 
 .matrix-table table {
   min-width: 760px;
+}
+
+.favorite-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+.favorite-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+  cursor: pointer;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 32px minmax(120px, 1.35fr) minmax(88px, 1fr) minmax(74px, 0.78fr) 28px;
+  min-height: 58px;
+  padding: 7px 10px;
+}
+
+.favorite-row:hover {
+  background: #172230;
 }
 
 .analyze-panel, .saved-panel {
@@ -712,7 +816,8 @@ td span {
     min-height: 380px;
   }
 
-  .analyze-panel {
+  .analyze-panel,
+  .saved-panel {
     height: 380px;
     min-height: 380px;
     max-height: 380px;
