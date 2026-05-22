@@ -276,11 +276,12 @@ async def snapshot_matrix(
 @router.get("/analyze", response_model=AnalyzeOut)
 async def analyze(
     kind: str = Query("USDT", min_length=2, max_length=20),
-    threshold: Decimal = Query(Decimal("10")),
+    threshold: Decimal = Query(Decimal("10"), ge=Decimal("0")),
     target_ratio: Decimal = Query(Decimal("80"), ge=Decimal("1"), le=Decimal("100")),
     db: Prisma = Depends(get_db),
 ) -> AnalyzeOut:
     normalized_kind = _kind(kind)
+    threshold = abs(threshold)
     snapshots = await db.marketsnapshot.find_many(
         where={"kind": normalized_kind},
         order={"capturedAt": "desc"},
@@ -308,7 +309,7 @@ async def analyze(
 
     latest_pairs = latest.pairs or []
     sorted_changes = sorted(
-        [pair.priceChangePercent for pair in latest_pairs if pair.priceChangePercent is not None],
+        [abs(pair.priceChangePercent) for pair in latest_pairs if pair.priceChangePercent is not None],
         reverse=True,
     )
     target_threshold = None
@@ -324,7 +325,7 @@ async def analyze(
 
     recommendations: list[RecommendationOut] = []
     for pair in latest_pairs:
-        if pair.priceChangePercent is None or pair.priceChangePercent < threshold:
+        if pair.priceChangePercent is None or abs(pair.priceChangePercent) < threshold:
             continue
         previous = previous_by_symbol.get(pair.symbol)
         previous_change = previous.priceChangePercent if previous else None
@@ -344,7 +345,7 @@ async def analyze(
         )
 
     recommendations.sort(
-        key=lambda pair: pair.price_change_percent or Decimal("-999999"),
+        key=lambda pair: abs(pair.price_change_percent or Decimal("0")),
         reverse=True,
     )
     total_pairs = len(latest_pairs)

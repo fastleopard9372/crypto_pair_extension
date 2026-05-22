@@ -615,6 +615,14 @@ td span {
   color: var(--accent-strong);
 }
 
+.matrix-table .matrix-favorite-heading,
+.matrix-table .matrix-favorite-cell {
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+  width: 36px;
+}
+
 .matrix-table th button {
   background: transparent;
   border: 0;

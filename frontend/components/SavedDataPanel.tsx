@@ -13,6 +13,7 @@ type SavedDataPanelProps = {
   rows: MatrixRow[];
   favorites: FavoritePair[];
   favoriteCount: number;
+  favoriteSymbols: Set<string>;
   livePairBySymbol: Map<string, Pair>;
   isLoading: boolean;
   isLoadingFavorites: boolean;
@@ -23,6 +24,7 @@ type SavedDataPanelProps = {
   onDeleteSnapshot: () => void;
   onSelect: (symbol: string) => void;
   onSelectSnapshot: (snapshotId: number) => void;
+  onToggleMatrixFavorite: (row: MatrixRow) => void;
   onRemoveFavorite: (favorite: FavoritePair) => void;
 };
 
@@ -32,6 +34,7 @@ export function SavedDataPanel({
   rows,
   favorites,
   favoriteCount,
+  favoriteSymbols,
   livePairBySymbol,
   isLoading,
   isLoadingFavorites,
@@ -42,6 +45,7 @@ export function SavedDataPanel({
   onDeleteSnapshot,
   onSelect,
   onSelectSnapshot,
+  onToggleMatrixFavorite,
   onRemoveFavorite
 }: SavedDataPanelProps) {
   const [activeTab, setActiveTab] = useState<DataTab>("saved");
@@ -149,6 +153,7 @@ export function SavedDataPanel({
               <thead>
                 <tr>
                   <th>Pair</th>
+                  <th className="matrix-favorite-heading" aria-label="Favorite" />
                   {(matrix?.timestamps ?? []).map((timestamp) => {
                     const snapshotId = timestampSnapshotIds.get(timestamp);
                     return (
@@ -169,25 +174,45 @@ export function SavedDataPanel({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
-                  <tr key={row.symbol} onClick={() => onSelect(row.symbol)}>
-                    <td>
-                      <strong>{row.base_asset}</strong>
-                      <span>/{row.quote_asset}</span>
-                    </td>
-                    {(matrix?.timestamps ?? []).map((timestamp) => {
-                      const cell = row.cells[timestamp];
-                      return (
-                        <td className={changeClass(cell?.price_change_percent)} key={timestamp}>
-                          {cell ? formatPercent(cell.price_change_percent) : "-"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                {rows.map((row) => {
+                  const isFavorite = favoriteSymbols.has(row.symbol);
+                  return (
+                    <tr key={row.symbol} onClick={() => onSelect(row.symbol)}>
+                      <td>
+                        <strong>{row.base_asset}</strong>
+                        <span>/{row.quote_asset}</span>
+                      </td>
+                      <td className="matrix-favorite-cell">
+                        <button
+                          className={`pair-star-button ${isFavorite ? "active" : ""}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onToggleMatrixFavorite(row);
+                          }}
+                          title={isFavorite ? "Remove favorite" : "Add favorite"}
+                          type="button"
+                        >
+                          <Star
+                            size={15}
+                            strokeWidth={1.8}
+                            fill={isFavorite ? "currentColor" : "none"}
+                          />
+                        </button>
+                      </td>
+                      {(matrix?.timestamps ?? []).map((timestamp) => {
+                        const cell = row.cells[timestamp];
+                        return (
+                          <td className={changeClass(cell?.price_change_percent)} key={timestamp}>
+                            {cell ? formatPercent(cell.price_change_percent) : "-"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={(matrix?.timestamps.length ?? 0) + 1}>No saved data yet.</td>
+                    <td colSpan={(matrix?.timestamps.length ?? 0) + 2}>No saved data yet.</td>
                   </tr>
                 )}
               </tbody>

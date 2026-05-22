@@ -10,6 +10,7 @@ import { SavedDataPanel } from "@/components/SavedDataPanel";
 import {
   AnalyzeResult,
   FavoritePair,
+  FavoritePairInput,
   Pair,
   SnapshotMatrix,
   SnapshotMeta,
@@ -107,8 +108,14 @@ export default function Home() {
   const visibleMatrixRows = useMemo(() => {
     const rows = matrix?.rows ?? [];
     const needle = query.trim().toUpperCase();
-    return needle ? rows.filter((row) => row.symbol.includes(needle)) : rows;
-  }, [matrix, query]);
+    const filteredRows = needle ? rows.filter((row) => row.symbol.includes(needle)) : rows;
+
+    return [...filteredRows].sort((left, right) => {
+      const leftFavorite = favoriteSymbols.has(left.symbol) ? 1 : 0;
+      const rightFavorite = favoriteSymbols.has(right.symbol) ? 1 : 0;
+      return rightFavorite - leftFavorite;
+    });
+  }, [favoriteSymbols, matrix, query]);
 
   const loadFavorites = useCallback(async () => {
     setIsLoadingFavorites(true);
@@ -227,7 +234,7 @@ export default function Home() {
     }
   }
 
-  async function handleToggleFavorite(pair: Pair) {
+  async function handleToggleFavorite(pair: FavoritePairInput) {
     const wasFavorite = favoriteSymbols.has(pair.symbol);
     setFavorites((current) =>
       wasFavorite
@@ -354,6 +361,7 @@ export default function Home() {
           rows={visibleMatrixRows}
           favorites={visibleFavorites}
           favoriteCount={favorites?.length}
+          favoriteSymbols={favoriteSymbols}
           livePairBySymbol={livePairBySymbol}
           isLoading={isLoadingHistory}
           isLoadingFavorites={isLoadingFavorites}
@@ -364,6 +372,7 @@ export default function Home() {
           onDeleteSnapshot={handleDeleteSnapshot}
           onSelect={setSelectedSymbol}
           onSelectSnapshot={setSelectedSnapshotId}
+          onToggleMatrixFavorite={handleToggleFavorite}
           onRemoveFavorite={handleRemoveFavorite}
         />
         <AnalyzePanel

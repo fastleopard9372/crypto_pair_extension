@@ -87,6 +87,8 @@ export type FavoritePair = {
   created_at: string;
 };
 
+export type FavoritePairInput = Pick<Pair, "symbol" | "base_asset" | "quote_asset">;
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body && !headers.has("Content-Type")) {
@@ -114,7 +116,7 @@ export function getFavorites(kind: string) {
   return request<FavoritePair[]>(`/api/favorites?kind=${encodeURIComponent(kind)}`);
 }
 
-export function addFavorite(pair: Pair, kind: string) {
+export function addFavorite(pair: FavoritePairInput, kind: string) {
   return request<FavoritePair>("/api/favorites", {
     method: "POST",
     body: JSON.stringify({
