@@ -78,6 +78,65 @@ export type AnalyzeResult = {
   recommendations: Recommendation[];
 };
 
+export type VolatilityPoint = {
+  timestamp: string;
+  price: string;
+};
+
+export type VolatilityEvent = {
+  start_at: string;
+  end_at: string;
+  start_price: string;
+  end_price: string;
+  change_percent: string;
+};
+
+export type VolatilityToken = {
+  id: number;
+  name: string;
+  symbol: string;
+  slug: string;
+  cmc_rank: number | null;
+  date_added: string | null;
+  age_months: string | null;
+  price: string | null;
+  market_cap: string | null;
+  volume_24h: string | null;
+  percent_change_24h: string | null;
+  threshold_percent: string;
+  probability_percent: string;
+  hit_count: number;
+  period_count: number;
+  max_abs_change_percent: string;
+  window_days: number;
+  points: VolatilityPoint[];
+  events: VolatilityEvent[];
+};
+
+export type VolatilityScan = {
+  source: "coinmarketcap";
+  quote: string;
+  lookback_days: number;
+  window_days: number;
+  threshold_percent: string;
+  min_probability_percent: string;
+  min_age_months: string;
+  checked_count: number;
+  candidate_count: number;
+  count: number;
+  tokens: VolatilityToken[];
+};
+
+export type VolatilityScanParams = {
+  thresholdPercent: number;
+  minProbabilityPercent: number;
+  windowDays: 1 | 2;
+  lookbackDays: number;
+  minAgeMonths: number;
+  limit: number;
+  quote: string;
+};
+
 export type FavoritePair = {
   id: number;
   kind: string;
@@ -167,4 +226,17 @@ export function analyze(kind: string, threshold: number, targetRatio: number) {
   return request<AnalyzeResult>(
     `/api/analyze?kind=${encodeURIComponent(kind)}&threshold=${threshold}&target_ratio=${targetRatio}`
   );
+}
+
+export function scanCoinMarketCapVolatility(params: VolatilityScanParams) {
+  const search = new URLSearchParams({
+    threshold_percent: String(params.thresholdPercent),
+    min_probability_percent: String(params.minProbabilityPercent),
+    window_days: String(params.windowDays),
+    lookback_days: String(params.lookbackDays),
+    min_age_months: String(params.minAgeMonths),
+    limit: String(params.limit),
+    quote: params.quote
+  });
+  return request<VolatilityScan>(`/api/volatility/coinmarketcap?${search.toString()}`);
 }

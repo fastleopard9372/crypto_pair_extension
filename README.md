@@ -23,6 +23,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 # edit .env and paste your NeonDB DATABASE_URL
+# optional: paste COINMARKETCAP_API_KEY for the volatility screener page
 prisma generate --schema prisma/schema.prisma
 prisma db push --schema prisma/schema.prisma
 uvicorn app.main:app --reload --port 8080
@@ -51,6 +52,8 @@ Open `http://localhost:3000`.
 - Click the star on any live pair to save/remove it as a favorite pair in the
   database.
 - Click any pair row to open its TradingView chart.
+- Open `Volatility` to scan CoinMarketCap tokens for recurring absolute price
+  moves over 1-day or 2-day windows.
 
 ## Database
 
