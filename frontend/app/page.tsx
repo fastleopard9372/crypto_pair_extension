@@ -60,6 +60,11 @@ export default function Home() {
     [favorites]
   );
 
+  const livePairBySymbol = useMemo(
+    () => new Map(livePairs.map((pair) => [pair.symbol, pair])),
+    [livePairs]
+  );
+
   const filteredLivePairs = useMemo(() => {
     const needle = query.trim().toUpperCase();
     const pairs = needle
@@ -86,6 +91,18 @@ export default function Home() {
       return (toNumber(right[metric]) ?? -Infinity) - (toNumber(left[metric]) ?? -Infinity);
     });
   }, [favoriteSymbols, livePairs, marketSortMode, query]);
+
+  const visibleFavorites = useMemo(() => {
+    const needle = query.trim().toUpperCase();
+    return needle
+      ? favorites.filter(
+          (favorite) =>
+            favorite.symbol.includes(needle) ||
+            favorite.base_asset.includes(needle) ||
+            favorite.quote_asset.includes(needle)
+        )
+      : favorites;
+  }, [favorites, query]);
 
   const visibleMatrixRows = useMemo(() => {
     const rows = matrix?.rows ?? [];
@@ -241,6 +258,18 @@ export default function Home() {
     }
   }
 
+  async function handleRemoveFavorite(favorite: FavoritePair) {
+    setFavorites((current) => current.filter((item) => item.symbol !== favorite.symbol));
+
+    try {
+      await removeFavorite(favorite.symbol, favorite.kind);
+      await loadFavorites();
+    } catch (error) {
+      await loadFavorites();
+      setMessage(error instanceof Error ? error.message : "Failed to remove favorite pair");
+    }
+  }
+
   return (
     <main className="app-shell">
       <section className="toolbar">
@@ -279,7 +308,7 @@ export default function Home() {
         <div className="stat">
           <Database size={17} />
           <span>
-            {snapshots.length} saved snapshots / {favorites.length} favorites
+            {snapshots.length} saved snapshots / {favorites?.length} favorites
             {isLoadingFavorites ? "..." : ""}
           </span>
         </div>
@@ -323,13 +352,19 @@ export default function Home() {
           snapshots={snapshots}
           matrix={matrix}
           rows={visibleMatrixRows}
+          favorites={visibleFavorites}
+          favoriteCount={favorites?.length}
+          livePairBySymbol={livePairBySymbol}
           isLoading={isLoadingHistory}
+          isLoadingFavorites={isLoadingFavorites}
           isDeleting={isDeletingSnapshot}
           selectedSnapshotId={selectedSnapshotId}
           onLoad={loadHistory}
+          onLoadFavorites={loadFavorites}
           onDeleteSnapshot={handleDeleteSnapshot}
           onSelect={setSelectedSymbol}
           onSelectSnapshot={setSelectedSnapshotId}
+          onRemoveFavorite={handleRemoveFavorite}
         />
         <AnalyzePanel
           analysis={analysis}
