@@ -1,6 +1,5 @@
 import { Loader2, Save, Star } from "lucide-react";
 
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Pair } from "@/lib/api";
 import { changeClass, formatPercent, formatPrice, formatSubPrice, formatVolume } from "@/lib/format";
 
@@ -71,16 +70,6 @@ export function MarketPanel({
       </div>
 
       <div className="live-list" role="list" aria-label={`${kind} live pairs`}>
-        {isLoading && pairs.length === 0 && (
-          <div className="loading-state">
-            <LoadingSpinner label="Loading live pairs" />
-          </div>
-        )}
-        {isLoading && pairs.length > 0 && (
-          <div className="loading-strip">
-            <LoadingSpinner label="Refreshing" />
-          </div>
-        )}
         {pairs.map((pair) => {
           const isFavorite = favoriteSymbols.has(pair.symbol);
           return (
