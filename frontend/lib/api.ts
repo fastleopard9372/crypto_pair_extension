@@ -29,6 +29,13 @@ export type SnapshotMeta = {
   pair_count: number;
 };
 
+export type SnapshotDeleted = {
+  deleted: boolean;
+  id: number;
+  captured_at: string | null;
+  pair_count: number;
+};
+
 export type MatrixCell = {
   snapshot_id: number;
   captured_at: string;
@@ -139,6 +146,13 @@ export function saveSnapshot(kind: string) {
 
 export function getSnapshots(kind: string) {
   return request<SnapshotMeta[]>(`/api/snapshots?kind=${encodeURIComponent(kind)}&limit=100`);
+}
+
+export function removeSnapshot(snapshotId: number, kind: string) {
+  return request<SnapshotDeleted>(
+    `/api/snapshots/${snapshotId}?kind=${encodeURIComponent(kind)}`,
+    { method: "DELETE" }
+  );
 }
 
 export function getMatrix(kind: string) {

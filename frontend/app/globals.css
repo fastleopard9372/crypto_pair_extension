@@ -553,10 +553,45 @@ td span {
   min-width: 135px;
 }
 
+.snapshot-strip button.selected {
+  background: #162333;
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.snapshot-strip .delete-snapshot-button {
+  align-items: center;
+  color: #ffd0d6;
+  flex-direction: row;
+  margin-left: auto;
+  min-width: 108px;
+}
+
+.snapshot-strip .delete-snapshot-button:hover {
+  border-color: rgba(255, 93, 108, 0.65);
+}
+
 .snapshot-strip span,
 .recommendation-list small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.matrix-table th.selected-timestamp {
+  color: var(--accent-strong);
+}
+
+.matrix-table th button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  min-height: 24px;
+  padding: 0;
+}
+
+.matrix-table th button:hover {
+  background: transparent;
+  color: var(--accent-strong);
 }
 
 .matrix-table {

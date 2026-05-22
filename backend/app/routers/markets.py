@@ -17,6 +17,7 @@ from app.schemas import (
     PairOut,
     RecommendationOut,
     SnapshotCreate,
+    SnapshotDeletedOut,
     SnapshotMatrixOut,
     SnapshotMetaOut,
     SnapshotSavedOut,
@@ -195,6 +196,30 @@ async def list_snapshots(
         )
         for snapshot in snapshots
     ]
+
+
+@router.delete("/snapshots/{snapshot_id}", response_model=SnapshotDeletedOut)
+async def delete_snapshot(
+    snapshot_id: int,
+    kind: str = Query("USDT", min_length=2, max_length=20),
+    db: Prisma = Depends(get_db),
+) -> SnapshotDeletedOut:
+    snapshot = await db.marketsnapshot.find_first(
+        where={"id": snapshot_id, "kind": _kind(kind)},
+        include={"pairs": True},
+    )
+    if not snapshot:
+        return SnapshotDeletedOut(deleted=False, id=snapshot_id)
+
+    pair_count = len(snapshot.pairs or [])
+    captured_at = snapshot.capturedAt
+    await db.marketsnapshot.delete(where={"id": snapshot.id})
+    return SnapshotDeletedOut(
+        deleted=True,
+        id=snapshot.id,
+        captured_at=captured_at,
+        pair_count=pair_count,
+    )
 
 
 @router.get("/snapshots/matrix", response_model=SnapshotMatrixOut)

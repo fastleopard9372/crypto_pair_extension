@@ -21,6 +21,7 @@ import {
   getMatrix,
   getSnapshots,
   removeFavorite,
+  removeSnapshot,
   saveSnapshot
 } from "@/lib/api";
 import { formatTime, toNumber } from "@/lib/format";
@@ -35,6 +36,7 @@ export default function Home() {
   const [matrix, setMatrix] = useState<SnapshotMatrix | null>(null);
   const [analysis, setAnalysis] = useState<AnalyzeResult | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState("BTCUSDT");
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [marketSortMode, setMarketSortMode] = useState<MarketSortMode>("change");
   const [threshold, setThreshold] = useState(10);
@@ -44,6 +46,7 @@ export default function Home() {
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingSnapshot, setIsDeletingSnapshot] = useState(false);
   const [isChartEnabled, setIsChartEnabled] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -124,6 +127,11 @@ export default function Home() {
       const [snapshotRows, matrixRows] = await Promise.all([getSnapshots(kind), getMatrix(kind)]);
       setSnapshots(snapshotRows);
       setMatrix(matrixRows);
+      setSelectedSnapshotId((current) =>
+        current && snapshotRows.some((snapshot) => snapshot.id === current)
+          ? current
+          : (snapshotRows[0]?.id ?? null)
+      );
       setMessage(null);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to read saved data");
@@ -175,6 +183,30 @@ export default function Home() {
       setMessage(error instanceof Error ? error.message : "Failed to save snapshot");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleDeleteSnapshot() {
+    if (!selectedSnapshotId) return;
+    const selectedSnapshot = snapshots.find((snapshot) => snapshot.id === selectedSnapshotId);
+    const selectedTime = selectedSnapshot ? formatTime(selectedSnapshot.captured_at) : "this timestamp";
+    if (!window.confirm(`Remove saved data from ${selectedTime} from the database?`)) return;
+
+    setIsDeletingSnapshot(true);
+    try {
+      const deleted = await removeSnapshot(selectedSnapshotId, kind);
+      if (deleted.deleted) {
+        const removedTime = deleted.captured_at ? formatTime(deleted.captured_at) : selectedTime;
+        setMessage(`Removed ${deleted.pair_count} saved pairs from ${removedTime}`);
+      } else {
+        setMessage("That saved timestamp was already removed");
+      }
+      setAnalysis(null);
+      await loadHistory();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to remove saved timestamp");
+    } finally {
+      setIsDeletingSnapshot(false);
     }
   }
 
@@ -292,8 +324,12 @@ export default function Home() {
           matrix={matrix}
           rows={visibleMatrixRows}
           isLoading={isLoadingHistory}
+          isDeleting={isDeletingSnapshot}
+          selectedSnapshotId={selectedSnapshotId}
           onLoad={loadHistory}
+          onDeleteSnapshot={handleDeleteSnapshot}
           onSelect={setSelectedSymbol}
+          onSelectSnapshot={setSelectedSnapshotId}
         />
         <AnalyzePanel
           analysis={analysis}
