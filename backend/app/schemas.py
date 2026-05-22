@@ -88,3 +88,19 @@ class AnalyzeOut(BaseModel):
     count: int
     qualified_ratio: Decimal
     recommendations: list[RecommendationOut]
+
+
+class FavoritePairCreate(BaseModel):
+    kind: str = Field(min_length=2, max_length=20)
+    symbol: str = Field(min_length=2, max_length=40)
+    base_asset: str = Field(min_length=1, max_length=30)
+    quote_asset: str = Field(min_length=1, max_length=30)
+
+
+class FavoritePairOut(BaseModel):
+    id: int
+    kind: str
+    symbol: str
+    base_asset: str
+    quote_asset: str
+    created_at: datetime

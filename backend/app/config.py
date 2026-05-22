@@ -6,13 +6,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = Field(
-        "postgresql://crypto:crypto@localhost:5432/crypto_pairs",
+        "postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require",
         alias="DATABASE_URL",
     )
     mexc_base_url: str = Field("https://api.mexc.com", alias="MEXC_BASE_URL")
     cors_origins: str = Field(
         "http://localhost:3000,http://127.0.0.1:3000",
         alias="CORS_ORIGINS",
+    )
+    cors_origin_regex: str = Field(
+        r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$",
+        alias="CORS_ORIGIN_REGEX",
     )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

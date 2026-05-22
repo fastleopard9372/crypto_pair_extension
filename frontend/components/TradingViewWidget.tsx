@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 
 declare global {
   interface Window {
@@ -15,15 +15,21 @@ type TradingViewWidgetProps = {
 };
 
 export function TradingViewWidget({ symbol }: TradingViewWidgetProps) {
-  const containerId = useMemo(
-    () => `tradingview-${symbol.toLowerCase()}-${Math.random().toString(36).slice(2)}`,
-    [symbol]
-  );
+  const [isLoading, setIsLoading] = useState(true);
+  const containerId = `tradingview-${symbol.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
   const tradingViewSymbol = `MEXC:${symbol}`;
 
   useEffect(() => {
+    let isCancelled = false;
+    let settleTimer: number | undefined;
+    const container = document.getElementById(containerId);
+    setIsLoading(true);
+    if (container) {
+      container.replaceChildren();
+    }
+
     const createWidget = () => {
-      if (!window.TradingView) return;
+      if (isCancelled || !window.TradingView) return;
       new window.TradingView.widget({
         autosize: true,
         symbol: tradingViewSymbol,
@@ -38,22 +44,43 @@ export function TradingViewWidget({ symbol }: TradingViewWidgetProps) {
         allow_symbol_change: true,
         container_id: containerId
       });
+      settleTimer = window.setTimeout(() => {
+        if (!isCancelled) setIsLoading(false);
+      }, 700);
     };
 
     const existing = document.getElementById("tradingview-widget-script");
-    if (existing) {
+    if (window.TradingView) {
       createWidget();
-      return;
+    } else if (existing) {
+      existing.addEventListener("load", createWidget, { once: true });
+    } else {
+      const script = document.createElement("script");
+      script.id = "tradingview-widget-script";
+      script.src = "https://s3.tradingview.com/tv.js";
+      script.async = true;
+      script.onload = createWidget;
+      script.onerror = () => setIsLoading(false);
+      document.body.appendChild(script);
     }
 
-    const script = document.createElement("script");
-    script.id = "tradingview-widget-script";
-    script.src = "https://s3.tradingview.com/tv.js";
-    script.async = true;
-    script.onload = createWidget;
-    document.body.appendChild(script);
+    return () => {
+      isCancelled = true;
+      if (settleTimer) window.clearTimeout(settleTimer);
+      existing?.removeEventListener("load", createWidget);
+      document.getElementById(containerId)?.replaceChildren();
+    };
   }, [containerId, tradingViewSymbol]);
 
-  return <div id={containerId} className="tradingview-container" />;
+  return (
+    <div className="tradingview-shell">
+      <div id={containerId} className="tradingview-container" />
+      {isLoading && (
+        <div className="chart-loading">
+          <span className="spinner" aria-hidden="true" />
+          <span>Loading TradingView</span>
+        </div>
+      )}
+    </div>
+  );
 }
-

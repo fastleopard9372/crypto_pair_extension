@@ -1,4 +1,4 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export type Pair = {
   symbol: string;
@@ -71,13 +71,24 @@ export type AnalyzeResult = {
   recommendations: Recommendation[];
 };
 
+export type FavoritePair = {
+  id: number;
+  kind: string;
+  symbol: string;
+  base_asset: string;
+  quote_asset: string;
+  created_at: string;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (init?.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {})
-    }
+    headers
   });
 
   if (!response.ok) {
@@ -92,8 +103,31 @@ export function getKinds() {
   return request<{ kinds: string[] }>("/api/kinds");
 }
 
+export function getFavorites(kind: string) {
+  return request<FavoritePair[]>(`/api/favorites?kind=${encodeURIComponent(kind)}`);
+}
+
+export function addFavorite(pair: Pair, kind: string) {
+  return request<FavoritePair>("/api/favorites", {
+    method: "POST",
+    body: JSON.stringify({
+      kind,
+      symbol: pair.symbol,
+      base_asset: pair.base_asset,
+      quote_asset: pair.quote_asset
+    })
+  });
+}
+
+export function removeFavorite(symbol: string, kind: string) {
+  return request<{ deleted: boolean }>(
+    `/api/favorites/${encodeURIComponent(symbol)}?kind=${encodeURIComponent(kind)}`,
+    { method: "DELETE" }
+  );
+}
+
 export function getLivePairs(kind: string) {
-  return request<LivePairs>(`/api/pairs/live?kind=${encodeURIComponent(kind)}&limit=300`);
+  return request<LivePairs>(`/api/pairs/live?kind=${encodeURIComponent(kind)}&limit=5000`);
 }
 
 export function saveSnapshot(kind: string) {
@@ -104,12 +138,12 @@ export function saveSnapshot(kind: string) {
 }
 
 export function getSnapshots(kind: string) {
-  return request<SnapshotMeta[]>(`/api/snapshots?kind=${encodeURIComponent(kind)}&limit=20`);
+  return request<SnapshotMeta[]>(`/api/snapshots?kind=${encodeURIComponent(kind)}&limit=100`);
 }
 
 export function getMatrix(kind: string) {
   return request<SnapshotMatrix>(
-    `/api/snapshots/matrix?kind=${encodeURIComponent(kind)}&limit=8&metric=change_percent`
+    `/api/snapshots/matrix?kind=${encodeURIComponent(kind)}&limit=24&metric=change_percent`
   );
 }
 
