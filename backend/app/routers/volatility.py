@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Literal
 
 from fastapi import APIRouter, Query
 
@@ -14,7 +13,7 @@ router = APIRouter(prefix="/api/volatility", tags=["volatility"])
 async def scan_coinmarketcap_volatility(
     threshold_percent: Decimal = Query(Decimal("10"), ge=Decimal("0")),
     min_probability_percent: Decimal = Query(Decimal("40"), ge=Decimal("0"), le=Decimal("100")),
-    window_days: Literal[1, 2] = Query(1),
+    window_days: int = Query(1, ge=1, le=2),
     lookback_days: int = Query(30, ge=7, le=60),
     min_age_months: Decimal = Query(Decimal("3"), ge=Decimal("0")),
     limit: int = Query(200, ge=1, le=1000),

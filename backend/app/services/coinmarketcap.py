@@ -87,7 +87,7 @@ class CoinMarketCapClient:
 
     async def get_latest_listings(self, limit: int, quote: str) -> list[dict[str, Any]]:
         data = await self._get(
-            "/v3/cryptocurrency/listings/latest",
+            "/v1/cryptocurrency/listings/latest",
             params={
                 "start": 1,
                 "limit": limit,
@@ -119,7 +119,7 @@ class CoinMarketCapClient:
                     "convert": quote,
                     "time_start": time_start.isoformat().replace("+00:00", "Z"),
                     "time_end": time_end.isoformat().replace("+00:00", "Z"),
-                    "interval": "1d",
+                    "interval": "daily",
                 },
             )
             histories.update(self._parse_history_payload(data, quote))
