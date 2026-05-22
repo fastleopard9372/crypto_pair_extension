@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 declare global {
   interface Window {
@@ -15,13 +15,15 @@ type TradingViewWidgetProps = {
 };
 
 export function TradingViewWidget({ symbol }: TradingViewWidgetProps) {
-  const containerId = useMemo(
-    () => `tradingview-${symbol.toLowerCase()}-${Math.random().toString(36).slice(2)}`,
-    [symbol]
-  );
+  const containerId = `tradingview-${symbol.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
   const tradingViewSymbol = `MEXC:${symbol}`;
 
   useEffect(() => {
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.replaceChildren();
+    }
+
     const createWidget = () => {
       if (!window.TradingView) return;
       new window.TradingView.widget({
@@ -56,4 +58,3 @@ export function TradingViewWidget({ symbol }: TradingViewWidgetProps) {
 
   return <div id={containerId} className="tradingview-container" />;
 }
-

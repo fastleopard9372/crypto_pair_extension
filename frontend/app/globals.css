@@ -66,7 +66,7 @@ input {
 .app-shell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   margin: 0 auto;
   max-width: 1800px;
   min-height: 100vh;
@@ -189,15 +189,16 @@ input {
 }
 
 .workspace {
+  align-items: start;
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(360px, 0.42fr) minmax(620px, 1fr);
-  min-height: 640px;
+  gap: 12px;
+  grid-template-columns: minmax(330px, 0.4fr) minmax(620px, 1fr);
 }
 
 .lower-grid {
+  align-items: start;
   display: grid;
-  gap: 16px;
+  gap: 12px;
   grid-template-columns: minmax(640px, 1fr) minmax(320px, 0.36fr);
 }
 
@@ -215,12 +216,12 @@ input {
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  min-height: 76px;
-  padding: 14px 16px;
+  min-height: 58px;
+  padding: 10px 14px;
 }
 
 .panel h2 {
-  font-size: 20px;
+  font-size: 17px;
 }
 
 .table-wrap {
@@ -228,8 +229,102 @@ input {
   overflow: auto;
 }
 
-.live-table {
+.pair-panel {
+  height: 440px;
+  max-height: 440px;
+}
+
+.live-list {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.pair-row {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  gap: 9px;
+  grid-template-columns: 32px minmax(94px, 1.35fr) minmax(82px, 1fr) minmax(70px, 0.78fr) 18px;
+  justify-content: stretch;
+  min-height: 50px;
+  padding: 6px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.pair-row:hover,
+.pair-row.selected {
+  background: #172230;
+}
+
+.pair-avatar {
+  align-items: center;
+  background: #263241;
+  border: 1px solid #3a4654;
+  border-radius: 50%;
+  color: #dbeafe;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.pair-name,
+.pair-price,
+.pair-change {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pair-name strong,
+.pair-price strong,
+.pair-change strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pair-name small,
+.pair-price small,
+.pair-change small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pair-price,
+.pair-change {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.pair-change .positive {
+  color: var(--positive);
+}
+
+.pair-change .negative {
+  color: var(--negative);
+}
+
+.pair-star {
+  color: #546173;
+  justify-self: center;
 }
 
 table {
@@ -291,12 +386,14 @@ td span {
 }
 
 .chart-panel {
-  min-height: 640px;
+  height: 440px;
+  min-height: 440px;
+  overflow: hidden;
 }
 
 .tradingview-container {
   flex: 1;
-  min-height: 560px;
+  min-height: 0;
   width: 100%;
 }
 
@@ -332,7 +429,7 @@ td span {
 }
 
 .matrix-table {
-  max-height: 520px;
+  max-height: 440px;
 }
 
 .matrix-table table {
@@ -340,7 +437,9 @@ td span {
 }
 
 .analyze-panel {
-  min-height: 520px;
+  height: 440px;
+  min-height: 440px;
+  max-height: 440px;
 }
 
 .analysis-controls {
@@ -355,7 +454,7 @@ td span {
   display: grid;
   gap: 10px;
   grid-template-columns: 1fr 88px 20px;
-  padding: 14px 16px;
+  padding: 10px 12px;
 }
 
 .threshold-control + .threshold-control {
@@ -370,7 +469,7 @@ td span {
   background: #0d131b;
   border: 1px solid var(--line);
   color: var(--text);
-  height: 38px;
+  height: 32px;
   padding: 0 10px;
   text-align: right;
   width: 100%;
@@ -382,7 +481,8 @@ td span {
   display: grid;
   gap: 8px;
   grid-template-columns: 1fr;
-  padding: 12px 16px;
+  gap: 5px;
+  padding: 9px 12px;
 }
 
 .analysis-summary strong {
@@ -403,8 +503,8 @@ td span {
   border-bottom: 1px solid var(--line-soft);
   display: grid;
   grid-template-columns: 1fr auto;
-  min-height: 62px;
-  padding: 10px 16px;
+  min-height: 52px;
+  padding: 8px 12px;
   text-align: left;
 }
 
@@ -424,11 +524,12 @@ td span {
   }
 
   .chart-panel {
-    min-height: 560px;
+    height: 420px;
+    min-height: 420px;
   }
 
   .tradingview-container {
-    min-height: 480px;
+    min-height: 0;
   }
 }
 
@@ -456,10 +557,6 @@ td span {
     max-width: none;
   }
 
-  .workspace {
-    min-height: auto;
-  }
-
   .panel-header {
     align-items: flex-start;
     flex-direction: column;
@@ -475,15 +572,23 @@ td span {
   }
 
   .pair-panel {
-    max-height: 620px;
+    height: 380px;
+    max-height: 380px;
   }
 
   .chart-panel {
-    min-height: 500px;
+    height: 380px;
+    min-height: 380px;
+  }
+
+  .analyze-panel {
+    height: 380px;
+    min-height: 380px;
+    max-height: 380px;
   }
 
   .tradingview-container {
-    min-height: 420px;
+    min-height: 0;
   }
 
   th,

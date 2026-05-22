@@ -14,6 +14,10 @@ class Settings(BaseSettings):
         "http://localhost:3000,http://127.0.0.1:3000",
         alias="CORS_ORIGINS",
     )
+    cors_origin_regex: str = Field(
+        r"^https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$",
+        alias="CORS_ORIGIN_REGEX",
+    )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

@@ -5,6 +5,7 @@ import {
   BarChart3,
   Clock3,
   Database,
+  Star,
   RefreshCcw,
   Save,
   Search,
@@ -51,6 +52,15 @@ function formatPrice(value: string | null | undefined) {
   if (parsed === null) return "-";
   if (parsed >= 1) return parsed.toLocaleString(undefined, { maximumFractionDigits: 6 });
   return parsed.toPrecision(6);
+}
+
+function formatSubPrice(value: string | null | undefined) {
+  const parsed = toNumber(value);
+  if (parsed === null) return "-";
+  if (parsed >= 1) {
+    return `$ ${parsed.toLocaleString(undefined, { maximumFractionDigits: 4 })}`;
+  }
+  return `$ ${parsed.toPrecision(4)}`;
 }
 
 function formatVolume(value: string | null | undefined) {
@@ -111,8 +121,7 @@ export default function Home() {
   const visibleMatrixRows = useMemo(() => {
     const rows = matrix?.rows ?? [];
     const needle = query.trim().toUpperCase();
-    const filtered = needle ? rows.filter((row) => row.symbol.includes(needle)) : rows;
-    return filtered.slice(0, 60);
+    return needle ? rows.filter((row) => row.symbol.includes(needle)) : rows;
   }, [matrix, query]);
 
   const loadLive = useCallback(async () => {
@@ -198,7 +207,7 @@ export default function Home() {
         </div>
         <div className="toolbar-actions">
           <div className="kind-tabs" aria-label="Market kind">
-            {kinds.slice(0, 10).map((item) => (
+            {kinds.map((item) => (
               <button
                 className={item === kind ? "active" : ""}
                 key={item}
@@ -253,41 +262,40 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="table-wrap live-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Pair</th>
-                  <th>Price</th>
-                  <th>Change</th>
-                  <th>Volume</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLivePairs.map((pair) => (
-                  <tr
-                    className={pair.symbol === selectedSymbol ? "selected" : ""}
-                    key={pair.symbol}
-                    onClick={() => openPair(pair.symbol)}
-                  >
-                    <td>
-                      <strong>{pair.base_asset}</strong>
-                      <span>/{pair.quote_asset}</span>
-                    </td>
-                    <td>{formatPrice(pair.last_price)}</td>
-                    <td className={changeClass(pair.price_change_percent)}>
-                      {formatPercent(pair.price_change_percent)}
-                    </td>
-                    <td>{formatVolume(pair.volume)}</td>
-                  </tr>
-                ))}
-                {!isLoadingLive && filteredLivePairs.length === 0 && (
-                  <tr>
-                    <td colSpan={4}>No pairs found.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="live-list" role="list" aria-label={`${kind} live pairs`}>
+            {filteredLivePairs.map((pair) => (
+              <button
+                className={`pair-row ${pair.symbol === selectedSymbol ? "selected" : ""}`}
+                key={pair.symbol}
+                onClick={() => openPair(pair.symbol)}
+                type="button"
+                role="listitem"
+              >
+                <span className="pair-avatar" aria-hidden="true">
+                  {pair.base_asset.slice(0, 1)}
+                </span>
+                <span className="pair-name">
+                  <strong>
+                    {pair.base_asset}/{pair.quote_asset}
+                  </strong>
+                  <small>{pair.base_asset}</small>
+                </span>
+                <span className="pair-price">
+                  <strong>{formatPrice(pair.last_price)}</strong>
+                  <small>{formatSubPrice(pair.last_price)}</small>
+                </span>
+                <span className="pair-change">
+                  <strong className={changeClass(pair.price_change_percent)}>
+                    {formatPercent(pair.price_change_percent)}
+                  </strong>
+                  <small>{formatVolume(pair.volume)}</small>
+                </span>
+                <Star className="pair-star" size={15} strokeWidth={1.8} aria-hidden="true" />
+              </button>
+            ))}
+            {!isLoadingLive && filteredLivePairs.length === 0 && (
+              <div className="empty-state">No pairs found.</div>
+            )}
           </div>
         </div>
 
@@ -320,7 +328,7 @@ export default function Home() {
           </div>
 
           <div className="snapshot-strip">
-            {snapshots.slice(0, 5).map((snapshot) => (
+            {snapshots.map((snapshot) => (
               <button key={snapshot.id} type="button">
                 {formatTime(snapshot.captured_at)}
                 <span>{snapshot.pair_count} pairs</span>

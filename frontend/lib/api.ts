@@ -72,12 +72,14 @@ export type AnalyzeResult = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (init?.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {})
-    }
+    headers
   });
 
   if (!response.ok) {
@@ -93,7 +95,7 @@ export function getKinds() {
 }
 
 export function getLivePairs(kind: string) {
-  return request<LivePairs>(`/api/pairs/live?kind=${encodeURIComponent(kind)}&limit=300`);
+  return request<LivePairs>(`/api/pairs/live?kind=${encodeURIComponent(kind)}&limit=5000`);
 }
 
 export function saveSnapshot(kind: string) {
@@ -104,12 +106,12 @@ export function saveSnapshot(kind: string) {
 }
 
 export function getSnapshots(kind: string) {
-  return request<SnapshotMeta[]>(`/api/snapshots?kind=${encodeURIComponent(kind)}&limit=20`);
+  return request<SnapshotMeta[]>(`/api/snapshots?kind=${encodeURIComponent(kind)}&limit=100`);
 }
 
 export function getMatrix(kind: string) {
   return request<SnapshotMatrix>(
-    `/api/snapshots/matrix?kind=${encodeURIComponent(kind)}&limit=8&metric=change_percent`
+    `/api/snapshots/matrix?kind=${encodeURIComponent(kind)}&limit=24&metric=change_percent`
   );
 }
 

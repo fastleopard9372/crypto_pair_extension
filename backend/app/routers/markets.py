@@ -76,7 +76,7 @@ async def list_kinds() -> dict[str, list[str]]:
 @router.get("/pairs/live", response_model=LivePairsOut)
 async def live_pairs(
     kind: str = Query("USDT", min_length=2, max_length=20),
-    limit: int = Query(200, ge=1, le=2000),
+    limit: int = Query(5000, ge=1, le=10000),
 ) -> LivePairsOut:
     normalized_kind = _kind(kind)
     read_at, pairs = await MexcClient().get_live_pairs(normalized_kind)
