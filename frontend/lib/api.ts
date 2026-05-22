@@ -71,6 +71,15 @@ export type AnalyzeResult = {
   recommendations: Recommendation[];
 };
 
+export type FavoritePair = {
+  id: number;
+  kind: string;
+  symbol: string;
+  base_asset: string;
+  quote_asset: string;
+  created_at: string;
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body && !headers.has("Content-Type")) {
@@ -92,6 +101,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getKinds() {
   return request<{ kinds: string[] }>("/api/kinds");
+}
+
+export function getFavorites(kind: string) {
+  return request<FavoritePair[]>(`/api/favorites?kind=${encodeURIComponent(kind)}`);
+}
+
+export function addFavorite(pair: Pair, kind: string) {
+  return request<FavoritePair>("/api/favorites", {
+    method: "POST",
+    body: JSON.stringify({
+      kind,
+      symbol: pair.symbol,
+      base_asset: pair.base_asset,
+      quote_asset: pair.quote_asset
+    })
+  });
+}
+
+export function removeFavorite(symbol: string, kind: string) {
+  return request<{ deleted: boolean }>(
+    `/api/favorites/${encodeURIComponent(symbol)}?kind=${encodeURIComponent(kind)}`,
+    { method: "DELETE" }
+  );
 }
 
 export function getLivePairs(kind: string) {

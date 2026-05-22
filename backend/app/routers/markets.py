@@ -9,6 +9,8 @@ from prisma import Prisma
 from app.database import get_db
 from app.schemas import (
     AnalyzeOut,
+    FavoritePairCreate,
+    FavoritePairOut,
     LivePairsOut,
     MatrixCellOut,
     MatrixRowOut,
@@ -63,6 +65,17 @@ def _chunks(items: list[dict[str, Any]], size: int = 500) -> list[list[dict[str,
     return [items[index : index + size] for index in range(0, len(items), size)]
 
 
+def _favorite_to_out(favorite: Any) -> FavoritePairOut:
+    return FavoritePairOut(
+        id=favorite.id,
+        kind=favorite.kind,
+        symbol=favorite.symbol,
+        base_asset=favorite.baseAsset,
+        quote_asset=favorite.quoteAsset,
+        created_at=favorite.createdAt,
+    )
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -71,6 +84,56 @@ def health() -> dict[str, str]:
 @router.get("/kinds")
 async def list_kinds() -> dict[str, list[str]]:
     return {"kinds": await MexcClient().get_kinds()}
+
+
+@router.get("/favorites", response_model=list[FavoritePairOut])
+async def list_favorites(
+    kind: str | None = Query(None, min_length=2, max_length=20),
+    db: Prisma = Depends(get_db),
+) -> list[FavoritePairOut]:
+    where = {"kind": _kind(kind)} if kind else {}
+    favorites = await db.favoritepair.find_many(where=where, order={"createdAt": "desc"})
+    return [_favorite_to_out(favorite) for favorite in favorites]
+
+
+@router.post("/favorites", response_model=FavoritePairOut)
+async def add_favorite(
+    payload: FavoritePairCreate,
+    db: Prisma = Depends(get_db),
+) -> FavoritePairOut:
+    normalized_kind = _kind(payload.kind)
+    normalized_symbol = payload.symbol.upper().strip()
+    existing = await db.favoritepair.find_first(
+        where={"kind": normalized_kind, "symbol": normalized_symbol}
+    )
+    if existing:
+        return _favorite_to_out(existing)
+
+    favorite = await db.favoritepair.create(
+        data={
+            "kind": normalized_kind,
+            "symbol": normalized_symbol,
+            "baseAsset": payload.base_asset.upper().strip(),
+            "quoteAsset": payload.quote_asset.upper().strip(),
+        }
+    )
+    return _favorite_to_out(favorite)
+
+
+@router.delete("/favorites/{symbol}")
+async def remove_favorite(
+    symbol: str,
+    kind: str = Query("USDT", min_length=2, max_length=20),
+    db: Prisma = Depends(get_db),
+) -> dict[str, bool]:
+    favorite = await db.favoritepair.find_first(
+        where={"kind": _kind(kind), "symbol": symbol.upper().strip()}
+    )
+    if not favorite:
+        return {"deleted": False}
+
+    await db.favoritepair.delete(where={"id": favorite.id})
+    return {"deleted": True}
 
 
 @router.get("/pairs/live", response_model=LivePairsOut)

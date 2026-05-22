@@ -229,9 +229,81 @@ input {
   overflow: auto;
 }
 
+.loading-inline {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.spin-icon,
+.spinner {
+  animation: spin 900ms linear infinite;
+}
+
+.spinner {
+  border: 2px solid rgba(141, 154, 170, 0.35);
+  border-top-color: var(--accent-strong);
+  border-radius: 50%;
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+}
+
+.loading-state,
+.loading-strip {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  justify-content: center;
+}
+
+.loading-state {
+  flex: 1;
+  min-height: 140px;
+}
+
+.loading-strip {
+  background: #0d131b;
+  border-bottom: 1px solid var(--line-soft);
+  min-height: 36px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .pair-panel {
-  height: 440px;
-  max-height: 440px;
+  height: 600px;
+  max-height: 600px;
+}
+
+.sort-tabs {
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.sort-tabs button {
+  background: #0d131b;
+  border: 0;
+  border-right: 1px solid var(--line-soft);
+  color: var(--muted);
+  min-height: 36px;
+}
+
+.sort-tabs button:last-child {
+  border-right: 0;
+}
+
+.sort-tabs button.active {
+  background: #162333;
+  color: var(--accent-strong);
+  font-weight: 700;
 }
 
 .live-list {
@@ -255,6 +327,7 @@ input {
   padding: 6px 10px;
   text-align: left;
   width: 100%;
+  cursor: pointer;
 }
 
 .pair-row:hover,
@@ -322,9 +395,23 @@ input {
   color: var(--negative);
 }
 
-.pair-star {
+.pair-star,
+.pair-star-button {
   color: #546173;
   justify-self: center;
+}
+
+.pair-star-button {
+  aspect-ratio: 1;
+  background: transparent;
+  border: 0;
+  min-height: 28px;
+  padding: 0;
+  width: 28px;
+}
+
+.pair-star-button.active {
+  color: var(--warning);
 }
 
 table {
@@ -386,15 +473,54 @@ td span {
 }
 
 .chart-panel {
-  height: 440px;
-  min-height: 440px;
+  height: 600px;
+  min-height: 600px;
   overflow: hidden;
 }
 
 .tradingview-container {
-  flex: 1;
+  height: 100%;
   min-height: 0;
   width: 100%;
+}
+
+.tradingview-shell {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  width: 100%;
+}
+
+.chart-loading,
+.chart-placeholder {
+  align-items: center;
+  background: #0d131b;
+  color: var(--muted);
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.chart-loading {
+  inset: 0;
+  position: absolute;
+}
+
+.chart-placeholder {
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.chart-placeholder strong {
+  color: var(--text);
+}
+
+.chart-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
 }
 
 .change-pill {
@@ -403,6 +529,11 @@ td span {
   border: 1px solid var(--line);
   display: inline-flex;
   gap: 7px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.compact-button {
   min-height: 34px;
   padding: 0 10px;
 }
@@ -436,10 +567,10 @@ td span {
   min-width: 760px;
 }
 
-.analyze-panel {
-  height: 440px;
-  min-height: 440px;
-  max-height: 440px;
+.analyze-panel, .saved-panel {
+  height: 600px;
+  min-height: 600px;
+  max-height: 600px;
 }
 
 .analysis-controls {

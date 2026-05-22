@@ -41,3 +41,17 @@ model PairTick {
   @@index([quoteAsset, priceChangePercent])
   @@map("pair_ticks")
 }
+
+model FavoritePair {
+  id         Int      @id @default(autoincrement())
+  kind       String   @db.VarChar(20)
+  symbol     String   @db.VarChar(40)
+  baseAsset  String   @map("base_asset") @db.VarChar(30)
+  quoteAsset String   @map("quote_asset") @db.VarChar(30)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([kind, symbol])
+  @@index([kind])
+  @@map("favorite_pairs")
+}

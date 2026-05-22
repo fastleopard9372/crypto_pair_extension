@@ -1,105 +1,50 @@
 "use client";
 
-import {
-  Activity,
-  BarChart3,
-  Clock3,
-  Database,
-  Star,
-  RefreshCcw,
-  Save,
-  Search,
-  Sparkles,
-  TrendingUp
-} from "lucide-react";
+import { Activity, Clock3, Database, Loader2, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { TradingViewWidget } from "@/components/TradingViewWidget";
+import { AnalyzePanel } from "@/components/AnalyzePanel";
+import { ChartPanel } from "@/components/ChartPanel";
+import { MarketPanel, MarketSortMode } from "@/components/MarketPanel";
+import { SavedDataPanel } from "@/components/SavedDataPanel";
 import {
   AnalyzeResult,
-  MatrixRow,
+  FavoritePair,
   Pair,
   SnapshotMatrix,
   SnapshotMeta,
+  addFavorite,
   analyze,
+  getFavorites,
   getKinds,
   getLivePairs,
   getMatrix,
   getSnapshots,
+  removeFavorite,
   saveSnapshot
 } from "@/lib/api";
-
-function toNumber(value: string | null | undefined) {
-  if (value === null || value === undefined) return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function formatPercent(value: string | null | undefined) {
-  const parsed = toNumber(value);
-  if (parsed === null) return "-";
-  return `${parsed > 0 ? "+" : ""}${parsed.toFixed(2)}%`;
-}
-
-function formatPlainPercent(value: string | null | undefined) {
-  const parsed = toNumber(value);
-  if (parsed === null) return "-";
-  return `${parsed.toFixed(2)}%`;
-}
-
-function formatPrice(value: string | null | undefined) {
-  const parsed = toNumber(value);
-  if (parsed === null) return "-";
-  if (parsed >= 1) return parsed.toLocaleString(undefined, { maximumFractionDigits: 6 });
-  return parsed.toPrecision(6);
-}
-
-function formatSubPrice(value: string | null | undefined) {
-  const parsed = toNumber(value);
-  if (parsed === null) return "-";
-  if (parsed >= 1) {
-    return `$ ${parsed.toLocaleString(undefined, { maximumFractionDigits: 4 })}`;
-  }
-  return `$ ${parsed.toPrecision(4)}`;
-}
-
-function formatVolume(value: string | null | undefined) {
-  const parsed = toNumber(value);
-  if (parsed === null) return "-";
-  return Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 2 }).format(parsed);
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
-}
-
-function changeClass(value: string | null | undefined) {
-  const parsed = toNumber(value);
-  if (parsed === null) return "neutral";
-  if (parsed > 0) return "positive";
-  if (parsed < 0) return "negative";
-  return "neutral";
-}
+import { formatTime, toNumber } from "@/lib/format";
 
 export default function Home() {
   const [kinds, setKinds] = useState<string[]>(["USDT", "USDC", "BTC", "ETH"]);
   const [kind, setKind] = useState("USDT");
   const [livePairs, setLivePairs] = useState<Pair[]>([]);
+  const [favorites, setFavorites] = useState<FavoritePair[]>([]);
   const [readAt, setReadAt] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<SnapshotMeta[]>([]);
   const [matrix, setMatrix] = useState<SnapshotMatrix | null>(null);
   const [analysis, setAnalysis] = useState<AnalyzeResult | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState("BTCUSDT");
   const [query, setQuery] = useState("");
+  const [marketSortMode, setMarketSortMode] = useState<MarketSortMode>("change");
   const [threshold, setThreshold] = useState(10);
   const [targetRatio, setTargetRatio] = useState(80);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChartEnabled, setIsChartEnabled] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const selectedPair = useMemo(
@@ -107,22 +52,54 @@ export default function Home() {
     [livePairs, selectedSymbol]
   );
 
+  const favoriteSymbols = useMemo(
+    () => new Set(favorites.map((favorite) => favorite.symbol)),
+    [favorites]
+  );
+
   const filteredLivePairs = useMemo(() => {
     const needle = query.trim().toUpperCase();
-    if (!needle) return livePairs;
-    return livePairs.filter(
-      (pair) =>
-        pair.symbol.includes(needle) ||
-        pair.base_asset.includes(needle) ||
-        pair.quote_asset.includes(needle)
-    );
-  }, [livePairs, query]);
+    const pairs = needle
+      ? livePairs.filter(
+          (pair) =>
+            pair.symbol.includes(needle) ||
+            pair.base_asset.includes(needle) ||
+            pair.quote_asset.includes(needle)
+        )
+      : livePairs;
+
+    return [...pairs].sort((left, right) => {
+      const leftFavorite = favoriteSymbols.has(left.symbol) ? 1 : 0;
+      const rightFavorite = favoriteSymbols.has(right.symbol) ? 1 : 0;
+      const favoriteDelta = rightFavorite - leftFavorite;
+      if (favoriteDelta !== 0) return favoriteDelta;
+
+      const metric = {
+        change: "price_change_percent",
+        volume: "volume",
+        price: "last_price"
+      }[marketSortMode] as keyof Pick<Pair, "price_change_percent" | "volume" | "last_price">;
+
+      return (toNumber(right[metric]) ?? -Infinity) - (toNumber(left[metric]) ?? -Infinity);
+    });
+  }, [favoriteSymbols, livePairs, marketSortMode, query]);
 
   const visibleMatrixRows = useMemo(() => {
     const rows = matrix?.rows ?? [];
     const needle = query.trim().toUpperCase();
     return needle ? rows.filter((row) => row.symbol.includes(needle)) : rows;
   }, [matrix, query]);
+
+  const loadFavorites = useCallback(async () => {
+    setIsLoadingFavorites(true);
+    try {
+      setFavorites(await getFavorites(kind));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to read favorite pairs");
+    } finally {
+      setIsLoadingFavorites(false);
+    }
+  }, [kind]);
 
   const loadLive = useCallback(async () => {
     setIsLoadingLive(true);
@@ -142,6 +119,7 @@ export default function Home() {
   }, [kind, selectedSymbol]);
 
   const loadHistory = useCallback(async () => {
+    setIsLoadingHistory(true);
     try {
       const [snapshotRows, matrixRows] = await Promise.all([getSnapshots(kind), getMatrix(kind)]);
       setSnapshots(snapshotRows);
@@ -149,18 +127,23 @@ export default function Home() {
       setMessage(null);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to read saved data");
+    } finally {
+      setIsLoadingHistory(false);
     }
   }, [kind]);
 
   const runAnalyze = useCallback(async () => {
+    setIsAnalyzing(true);
     try {
       const result = await analyze(kind, threshold, targetRatio);
       setAnalysis(result);
       setMessage(null);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to analyze snapshots");
+    } finally {
+      setIsAnalyzing(false);
     }
-  }, [kind, threshold, targetRatio]);
+  }, [kind, targetRatio, threshold]);
 
   useEffect(() => {
     getKinds()
@@ -178,8 +161,9 @@ export default function Home() {
 
   useEffect(() => {
     loadHistory();
+    loadFavorites();
     setAnalysis(null);
-  }, [loadHistory]);
+  }, [loadFavorites, loadHistory]);
 
   async function handleSave() {
     setIsSaving(true);
@@ -194,8 +178,35 @@ export default function Home() {
     }
   }
 
-  function openPair(symbol: string) {
-    setSelectedSymbol(symbol);
+  async function handleToggleFavorite(pair: Pair) {
+    const wasFavorite = favoriteSymbols.has(pair.symbol);
+    setFavorites((current) =>
+      wasFavorite
+        ? current.filter((favorite) => favorite.symbol !== pair.symbol)
+        : [
+            {
+              id: -Date.now(),
+              kind,
+              symbol: pair.symbol,
+              base_asset: pair.base_asset,
+              quote_asset: pair.quote_asset,
+              created_at: new Date().toISOString()
+            },
+            ...current
+          ]
+    );
+
+    try {
+      if (wasFavorite) {
+        await removeFavorite(pair.symbol, kind);
+      } else {
+        await addFavorite(pair, kind);
+      }
+      await loadFavorites();
+    } catch (error) {
+      await loadFavorites();
+      setMessage(error instanceof Error ? error.message : "Failed to update favorite pair");
+    }
   }
 
   return (
@@ -219,7 +230,7 @@ export default function Home() {
             ))}
           </div>
           <button className="icon-button" onClick={loadLive} title="Refresh live pairs" type="button">
-            <RefreshCcw size={17} />
+            {isLoadingLive ? <Loader2 className="spin-icon" size={17} /> : <RefreshCcw size={17} />}
           </button>
         </div>
       </section>
@@ -235,7 +246,10 @@ export default function Home() {
         </div>
         <div className="stat">
           <Database size={17} />
-          <span>{snapshots.length} saved snapshots</span>
+          <span>
+            {snapshots.length} saved snapshots / {favorites.length} favorites
+            {isLoadingFavorites ? "..." : ""}
+          </span>
         </div>
         <label className="search-box">
           <Search size={17} />
@@ -250,200 +264,47 @@ export default function Home() {
       {message && <div className="notice">{message}</div>}
 
       <section className="workspace">
-        <div className="panel pair-panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Live market</p>
-              <h2>{kind} pairs</h2>
-            </div>
-            <button onClick={handleSave} disabled={isSaving} type="button">
-              <Save size={17} />
-              {isSaving ? "Saving" : "Save Snapshot"}
-            </button>
-          </div>
-
-          <div className="live-list" role="list" aria-label={`${kind} live pairs`}>
-            {filteredLivePairs.map((pair) => (
-              <button
-                className={`pair-row ${pair.symbol === selectedSymbol ? "selected" : ""}`}
-                key={pair.symbol}
-                onClick={() => openPair(pair.symbol)}
-                type="button"
-                role="listitem"
-              >
-                <span className="pair-avatar" aria-hidden="true">
-                  {pair.base_asset.slice(0, 1)}
-                </span>
-                <span className="pair-name">
-                  <strong>
-                    {pair.base_asset}/{pair.quote_asset}
-                  </strong>
-                  <small>{pair.base_asset}</small>
-                </span>
-                <span className="pair-price">
-                  <strong>{formatPrice(pair.last_price)}</strong>
-                  <small>{formatSubPrice(pair.last_price)}</small>
-                </span>
-                <span className="pair-change">
-                  <strong className={changeClass(pair.price_change_percent)}>
-                    {formatPercent(pair.price_change_percent)}
-                  </strong>
-                  <small>{formatVolume(pair.volume)}</small>
-                </span>
-                <Star className="pair-star" size={15} strokeWidth={1.8} aria-hidden="true" />
-              </button>
-            ))}
-            {!isLoadingLive && filteredLivePairs.length === 0 && (
-              <div className="empty-state">No pairs found.</div>
-            )}
-          </div>
-        </div>
-
-        <div className="panel chart-panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">TradingView</p>
-              <h2>{selectedPair ? `${selectedPair.base_asset}/${selectedPair.quote_asset}` : selectedSymbol}</h2>
-            </div>
-            <div className={`change-pill ${changeClass(selectedPair?.price_change_percent)}`}>
-              <TrendingUp size={16} />
-              {formatPercent(selectedPair?.price_change_percent)}
-            </div>
-          </div>
-          <TradingViewWidget key={selectedSymbol} symbol={selectedSymbol} />
-        </div>
+        <MarketPanel
+          kind={kind}
+          pairs={filteredLivePairs}
+          selectedSymbol={selectedSymbol}
+          favoriteSymbols={favoriteSymbols}
+          sortMode={marketSortMode}
+          isLoading={isLoadingLive}
+          isSaving={isSaving}
+          onSortModeChange={setMarketSortMode}
+          onSave={handleSave}
+          onSelect={setSelectedSymbol}
+          onToggleFavorite={handleToggleFavorite}
+        />
+        <ChartPanel
+          selectedPair={selectedPair}
+          selectedSymbol={selectedSymbol}
+          isEnabled={isChartEnabled}
+          onToggleEnabled={() => setIsChartEnabled((value) => !value)}
+          onEnable={() => setIsChartEnabled(true)}
+        />
       </section>
 
       <section className="lower-grid">
-        <div className="panel saved-panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Saved data</p>
-              <h2>Timestamp matrix</h2>
-            </div>
-            <button onClick={loadHistory} type="button">
-              <BarChart3 size={17} />
-              Read Saved Data
-            </button>
-          </div>
-
-          <div className="snapshot-strip">
-            {snapshots.map((snapshot) => (
-              <button key={snapshot.id} type="button">
-                {formatTime(snapshot.captured_at)}
-                <span>{snapshot.pair_count} pairs</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="table-wrap matrix-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Pair</th>
-                  {(matrix?.timestamps ?? []).map((timestamp) => (
-                    <th key={timestamp}>{formatTime(timestamp)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visibleMatrixRows.map((row: MatrixRow) => (
-                  <tr key={row.symbol} onClick={() => openPair(row.symbol)}>
-                    <td>
-                      <strong>{row.base_asset}</strong>
-                      <span>/{row.quote_asset}</span>
-                    </td>
-                    {(matrix?.timestamps ?? []).map((timestamp) => {
-                      const cell = row.cells[timestamp];
-                      return (
-                        <td className={changeClass(cell?.price_change_percent)} key={timestamp}>
-                          {cell ? formatPercent(cell.price_change_percent) : "-"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                {visibleMatrixRows.length === 0 && (
-                  <tr>
-                    <td colSpan={(matrix?.timestamps.length ?? 0) + 1}>No saved data yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="panel analyze-panel">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">Analyze</p>
-              <h2>Change percent</h2>
-            </div>
-            <button onClick={runAnalyze} type="button">
-              <Sparkles size={17} />
-              Analyze
-            </button>
-          </div>
-
-          <div className="analysis-controls">
-            <label className="threshold-control">
-              <span>Recommend &gt;=</span>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={threshold}
-                onChange={(event) => setThreshold(Number(event.target.value))}
-              />
-              <strong>%</strong>
-            </label>
-            <label className="threshold-control">
-              <span>Count target</span>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                step="1"
-                value={targetRatio}
-                onChange={(event) => setTargetRatio(Number(event.target.value))}
-              />
-              <strong>%</strong>
-            </label>
-          </div>
-
-          {analysis && (
-            <div className="analysis-summary">
-              <span>
-                Recommended <strong>{analysis.count}</strong> / {analysis.total_pairs}
-              </span>
-              <span>{formatPlainPercent(analysis.qualified_ratio)} meet the threshold</span>
-              <span>
-                {formatPlainPercent(analysis.target_ratio)} count cutoff:{" "}
-                <strong>{formatPercent(analysis.target_threshold)}</strong>
-              </span>
-            </div>
-          )}
-
-          <div className="recommendation-list">
-            {(analysis?.recommendations ?? []).map((pair) => (
-              <button key={pair.symbol} onClick={() => openPair(pair.symbol)} type="button">
-                <span>
-                  <strong>{pair.base_asset}</strong>/{pair.quote_asset}
-                </span>
-                <span className={changeClass(pair.price_change_percent)}>
-                  {formatPercent(pair.price_change_percent)}
-                </span>
-                <small>
-                  Delta {pair.change_percent_delta ? formatPercent(pair.change_percent_delta) : "-"}
-                </small>
-              </button>
-            ))}
-            {analysis && analysis.recommendations.length === 0 && (
-              <div className="empty-state">No saved pair is at or above {threshold}%.</div>
-            )}
-            {!analysis && <div className="empty-state">Run analyze after saving at least one snapshot.</div>}
-          </div>
-        </div>
+        <SavedDataPanel
+          snapshots={snapshots}
+          matrix={matrix}
+          rows={visibleMatrixRows}
+          isLoading={isLoadingHistory}
+          onLoad={loadHistory}
+          onSelect={setSelectedSymbol}
+        />
+        <AnalyzePanel
+          analysis={analysis}
+          threshold={threshold}
+          targetRatio={targetRatio}
+          isAnalyzing={isAnalyzing}
+          onThresholdChange={setThreshold}
+          onTargetRatioChange={setTargetRatio}
+          onAnalyze={runAnalyze}
+          onSelect={setSelectedSymbol}
+        />
       </section>
     </main>
   );

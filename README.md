@@ -48,10 +48,13 @@ Open `http://localhost:3000`.
 - Click `Analyze` to recommend pairs where `change_percent >= X`.
 - The analyzer also reports the change percent cutoff where the configured
   target count, default `80%`, of saved pairs are `X%+`.
+- Click the star on any live pair to save/remove it as a favorite pair in the
+  database.
 - Click any pair row to open its TradingView chart.
 
 ## Database
 
 The backend uses Prisma Client Python and NeonDB/PostgreSQL only. The Prisma
 schema is at `backend/prisma/schema.prisma`; it maps to the `market_snapshots`
-and `pair_ticks` Postgres tables.
+`pair_ticks`, and `favorite_pairs` Postgres tables. Run
+`prisma db push --schema prisma/schema.prisma` after schema changes.
