@@ -1,6 +1,7 @@
 "use client";
 
-import { Activity, Clock3, Database, Loader2, RefreshCcw, Search } from "lucide-react";
+import Link from "next/link";
+import { Activity, BarChart3, Clock3, Database, Loader2, RefreshCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AnalyzePanel } from "@/components/AnalyzePanel";
@@ -285,6 +286,10 @@ export default function Home() {
           <h1>Crypto Pair Snapshot</h1>
         </div>
         <div className="toolbar-actions">
+          <Link className="nav-link" href="/volatility">
+            <BarChart3 size={17} />
+            Volatility
+          </Link>
           <div className="kind-tabs" aria-label="Market kind">
             {kinds.map((item) => (
               <button

@@ -28,7 +28,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -59,8 +60,13 @@ button:disabled {
   opacity: 0.55;
 }
 
-input {
+input,
+select {
   min-width: 0;
+}
+
+select {
+  appearance: none;
 }
 
 .app-shell {
@@ -143,6 +149,23 @@ input {
   aspect-ratio: 1;
   padding: 0;
   width: 40px;
+}
+
+.nav-link {
+  align-items: center;
+  background: #182231;
+  border: 1px solid var(--line);
+  color: var(--text);
+  display: inline-flex;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 13px;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: #1d2a3b;
+  border-color: #3b4a5f;
 }
 
 .status-row {
@@ -710,6 +733,50 @@ td.pair, th.pair{
   width: 100%;
 }
 
+.threshold-control select {
+  background: #0d131b;
+  border: 1px solid var(--line);
+  color: var(--text);
+  height: 32px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.volatility-status-row {
+  grid-template-columns: repeat(2, minmax(130px, max-content)) minmax(220px, 1fr);
+}
+
+.volatility-grid {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(320px, 0.34fr) minmax(680px, 1fr);
+  width: 100%;
+}
+
+.volatility-controls-panel,
+.volatility-results-panel {
+  min-height: 600px;
+}
+
+.volatility-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.volatility-controls .threshold-control + .threshold-control {
+  border-left: 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.volatility-table {
+  max-height: 540px;
+}
+
+.volatility-table table {
+  min-width: 980px;
+}
+
 .analysis-summary {
   border-bottom: 1px solid var(--line-soft);
   color: var(--muted);
@@ -754,7 +821,8 @@ td.pair, th.pair{
 
 @media (max-width: 1180px) {
   .workspace,
-  .lower-grid {
+  .lower-grid,
+  .volatility-grid {
     grid-template-columns: 1fr;
   }
 

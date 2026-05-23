@@ -10,6 +10,11 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
     mexc_base_url: str = Field("https://api.mexc.com", alias="MEXC_BASE_URL")
+    coinmarketcap_base_url: str = Field(
+        "https://pro-api.coinmarketcap.com",
+        alias="COINMARKETCAP_BASE_URL",
+    )
+    coinmarketcap_api_key: str = Field("", alias="COINMARKETCAP_API_KEY")
     cors_origins: str = Field(
         "http://localhost:3000,http://127.0.0.1:3000",
         alias="CORS_ORIGINS",

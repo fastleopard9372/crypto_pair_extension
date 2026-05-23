@@ -111,3 +111,52 @@ class FavoritePairOut(BaseModel):
     base_asset: str
     quote_asset: str
     created_at: datetime
+
+
+class VolatilityPointOut(BaseModel):
+    timestamp: datetime
+    price: Decimal
+
+
+class VolatilityEventOut(BaseModel):
+    start_at: datetime
+    end_at: datetime
+    start_price: Decimal
+    end_price: Decimal
+    change_percent: Decimal
+
+
+class VolatilityTokenOut(BaseModel):
+    id: int
+    name: str
+    symbol: str
+    slug: str
+    cmc_rank: int | None = None
+    date_added: datetime | None = None
+    age_months: Decimal | None = None
+    price: Decimal | None = None
+    market_cap: Decimal | None = None
+    volume_24h: Decimal | None = None
+    percent_change_24h: Decimal | None = None
+    threshold_percent: Decimal
+    probability_percent: Decimal
+    hit_count: int
+    period_count: int
+    max_abs_change_percent: Decimal
+    window_days: int
+    points: list[VolatilityPointOut]
+    events: list[VolatilityEventOut]
+
+
+class VolatilityScanOut(BaseModel):
+    source: str = "coinmarketcap"
+    quote: str
+    lookback_days: int
+    window_days: int
+    threshold_percent: Decimal
+    min_probability_percent: Decimal
+    min_age_months: Decimal
+    checked_count: int
+    candidate_count: int
+    count: int
+    tokens: list[VolatilityTokenOut]
