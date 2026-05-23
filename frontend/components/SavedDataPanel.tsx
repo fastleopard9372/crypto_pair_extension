@@ -117,19 +117,22 @@ export function SavedDataPanel({
 
       {activeTab === "saved" ? (
         <>
-          <div className="snapshot-strip">
-            {snapshots.map((snapshot) => (
-              <button
-                className={snapshot.id === selectedSnapshotId ? "selected" : ""}
-                key={snapshot.id}
-                onClick={() => onSelectSnapshot(snapshot.id)}
-                type="button"
-              >
-                {formatTime(snapshot.captured_at)}
-                <span>{snapshot.pair_count} pairs</span>
-              </button>
-            ))}
-            {snapshots.length > 0 && (
+          {snapshots.length > 0 && (
+            <div className="snapshot-toolbar">
+              <div className="snapshot-strip" aria-label="Saved timestamps">
+                {snapshots.map((snapshot) => (
+                  <button
+                    aria-pressed={snapshot.id === selectedSnapshotId}
+                    className={snapshot.id === selectedSnapshotId ? "selected" : ""}
+                    key={snapshot.id}
+                    onClick={() => onSelectSnapshot(snapshot.id)}
+                    type="button"
+                  >
+                    <span className="snapshot-time">{formatTime(snapshot.captured_at)}</span>
+                    <span className="snapshot-count">{snapshot.pair_count} pairs</span>
+                  </button>
+                ))}
+              </div>
               <button
                 className="delete-snapshot-button"
                 disabled={!selectedSnapshotId || isDeleting || isLoading}
@@ -140,8 +143,8 @@ export function SavedDataPanel({
                 {isDeleting ? <Loader2 className="spin-icon" size={16} /> : <Trash2 size={16} />}
                 {isDeleting ? "Removing" : "Remove"}
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="table-wrap matrix-table">
             {isLoading && (

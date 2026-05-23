@@ -252,6 +252,41 @@ select {
   overflow: auto;
 }
 
+.table-wrap,
+.live-list,
+.favorite-list,
+.recommendation-list,
+.snapshot-strip {
+  scrollbar-color: #46566b #0d131b;
+  scrollbar-width: thin;
+}
+
+.table-wrap::-webkit-scrollbar,
+.live-list::-webkit-scrollbar,
+.favorite-list::-webkit-scrollbar,
+.recommendation-list::-webkit-scrollbar,
+.snapshot-strip::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+.table-wrap::-webkit-scrollbar-track,
+.live-list::-webkit-scrollbar-track,
+.favorite-list::-webkit-scrollbar-track,
+.recommendation-list::-webkit-scrollbar-track,
+.snapshot-strip::-webkit-scrollbar-track {
+  background: #0d131b;
+}
+
+.table-wrap::-webkit-scrollbar-thumb,
+.live-list::-webkit-scrollbar-thumb,
+.favorite-list::-webkit-scrollbar-thumb,
+.recommendation-list::-webkit-scrollbar-thumb,
+.snapshot-strip::-webkit-scrollbar-thumb {
+  background: #46566b;
+  border: 2px solid #0d131b;
+}
+
 .loading-inline {
   align-items: center;
   display: inline-flex;
@@ -595,23 +630,38 @@ td span {
   padding: 3px 6px;
 }
 
-td.pair, th.pair{
+td.pair,
+th.pair {
   text-align: left;
 }
 
-.snapshot-strip {
+.snapshot-toolbar {
+  align-items: center;
   border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 62px;
+  padding: 8px 12px;
+}
+
+.snapshot-strip {
   display: flex;
   gap: 8px;
+  min-width: 0;
   overflow: auto;
-  padding: 10px 12px;
+  padding: 0 0 5px;
 }
 
 .snapshot-strip button {
-  align-items: flex-start;
+  align-items: center;
   flex-direction: column;
-  gap: 2px;
-  min-width: 135px;
+  flex: 0 0 auto;
+  gap: 3px;
+  min-height: 42px;
+  min-width: 132px;
+  padding: 5px 11px;
+  white-space: nowrap;
 }
 
 .snapshot-strip button.selected {
@@ -620,22 +670,44 @@ td.pair, th.pair{
   color: var(--accent-strong);
 }
 
-.snapshot-strip .delete-snapshot-button {
+.snapshot-strip button.selected .snapshot-time {
+  color: var(--accent-strong);
+}
+
+.snapshot-time {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.snapshot-count {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.delete-snapshot-button {
   align-items: center;
   color: #ffd0d6;
   flex-direction: row;
-  margin-left: auto;
+  height: 42px;
   min-width: 108px;
 }
 
-.snapshot-strip .delete-snapshot-button:hover {
+.delete-snapshot-button:hover {
   border-color: rgba(255, 93, 108, 0.65);
 }
 
-.snapshot-strip span,
 .recommendation-list small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.matrix-table {
+  background: #0b1017;
+  flex: 1;
+  max-height: none;
 }
 
 .matrix-table th.selected-timestamp {
@@ -646,16 +718,55 @@ td.pair, th.pair{
 .matrix-table .matrix-favorite-cell {
   padding-left: 4px;
   padding-right: 4px;
+  position: sticky;
+  left: 0;
   text-align: center;
   width: 36px;
+}
+
+.matrix-table .matrix-favorite-heading {
+  z-index: 5;
+}
+
+.matrix-table .matrix-favorite-cell {
+  background: var(--panel);
+  z-index: 3;
+}
+
+.matrix-table th.pair,
+.matrix-table td.pair {
+  left: 36px;
+  min-width: 112px;
+  position: sticky;
+}
+
+.matrix-table th.pair {
+  z-index: 5;
+}
+
+.matrix-table td.pair {
+  background: var(--panel);
+  z-index: 3;
+}
+
+.matrix-table th:not(.pair):not(.matrix-favorite-heading),
+.matrix-table td:not(.pair):not(.matrix-favorite-cell) {
+  min-width: 118px;
+}
+
+.matrix-table tbody tr:hover .matrix-favorite-cell,
+.matrix-table tbody tr:hover td.pair {
+  background: #152131;
 }
 
 .matrix-table th button {
   background: transparent;
   border: 0;
   color: inherit;
+  font-size: 12px;
   min-height: 24px;
   padding: 0;
+  white-space: nowrap;
 }
 
 .matrix-table th button:hover {
@@ -663,12 +774,8 @@ td.pair, th.pair{
   color: var(--accent-strong);
 }
 
-.matrix-table {
-  max-height: 440px;
-}
-
 .matrix-table table {
-  min-width: 760px;
+  min-width: max(760px, 100%);
 }
 
 .favorite-list {
@@ -872,6 +979,15 @@ td.pair, th.pair{
   .threshold-control + .threshold-control {
     border-left: 0;
     border-top: 1px solid var(--line-soft);
+  }
+
+  .snapshot-toolbar {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .delete-snapshot-button {
+    width: 100%;
   }
 
   .pair-panel {
